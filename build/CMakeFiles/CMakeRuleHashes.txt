@@ -1,0 +1,7 @@
+# Hashes of file build rules.
+80dc9fa0049960b4f97d3dfe2dc9e2ed CMakeFiles/VitaPortsDL-velf
+d435517d092ae65d43a69991b3516584 CMakeFiles/VitaPortsDL.vpk-vpk
+48517bf5b43aff8c6326bec6f95b12d8 CMakeFiles/eboot.bin-self
+f6edc4ec23afc33e7820cd02864de658 VitaPortsDL.vpk.out
+38b04fda27e4a3ea6878869c574b4599 VitaPortsDL.vpk_param.sfo
+114c66a472c4ad9b47530b49822d9f72 eboot.bin.out

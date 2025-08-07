@@ -1,0 +1,6 @@
+/Users/felix/Documents/vita-my-love/VitaPortsDownloader/build/CMakeFiles/VitaPortsDL.dir
+/Users/felix/Documents/vita-my-love/VitaPortsDownloader/build/CMakeFiles/VitaPortsDL-velf.dir
+/Users/felix/Documents/vita-my-love/VitaPortsDownloader/build/CMakeFiles/eboot.bin-self.dir
+/Users/felix/Documents/vita-my-love/VitaPortsDownloader/build/CMakeFiles/VitaPortsDL.vpk-vpk.dir
+/Users/felix/Documents/vita-my-love/VitaPortsDownloader/build/CMakeFiles/edit_cache.dir
+/Users/felix/Documents/vita-my-love/VitaPortsDownloader/build/CMakeFiles/rebuild_cache.dir
