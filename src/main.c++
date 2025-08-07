@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <vita2d.h>
 #include <fstream>
+#include <string>
 #include <imgui_vita2d/imgui_vita.h>
 
 #include "utils.h++"
@@ -15,6 +16,9 @@
 using json = nlohmann::json;
 
 bool info_window_open = false;
+std::string info_window_check;
+
+SceCtrlData pad, oldpad;
 
 typedef enum {
     dark_theme,
@@ -84,7 +88,8 @@ int main(){
 
     std::ifstream f("ux0:data/DataFiles/datafiles.json");
     if (!f.is_open()) {
-        printf("Failed to open \"ux0:data/DataFiles/datafiles.json\"\n");
+        sceClibPrintf("Failed to open \"ux0:data/DataFiles/datafiles.json\"\n");
+        sceKernelExitProcess(0);
     }
     json datafiles = json::parse(f);
 
@@ -112,13 +117,14 @@ int main(){
     }
 
     while(true){
+        sceCtrlPeekBufferPositive(0, &pad, 1);
         vita2d_start_drawing();
         vita2d_clear_screen();
 
         ImGui_ImplVita2D_NewFrame();
 
         if(ImGui::BeginMainMenuBar()){
-            ImGui::TextDisabled("PS Vita Ports Downloader");
+            ImGui::TextDisabled("PS Vita Data Files Downloader");
             if(ImGui::BeginMenu("Settings")){
                 if(ImGui::MenuItem("Update list every time the app starts", nullptr, config["update_list_on_start"])){
                     config["update_list_on_start"] = !config["update_list_on_start"];
@@ -148,7 +154,7 @@ int main(){
                 ImGui::EndMenu();
             }
             if(ImGui::BeginMenu("About")){
-                ImGui::Text("PS Vita Ports Downloader by Harommel OddSock");
+                ImGui::Text("PS Vita Data Files Downloader by Harommel OddSock");
                 ImGui::Text("ImGui version %s", ImGui::GetVersion());
                 ImGui::EndMenu();
             }
@@ -160,7 +166,26 @@ int main(){
         ImGui::SetNextWindowSize(ImVec2(960/2, 544-21));
         if(ImGui::Begin("PS Vita Data Files Downloader", nullptr, ImGuiWindowFlags_NoCollapse + ImGuiWindowFlags_NoResize + ImGuiWindowFlags_NoMove + ImGuiWindowFlags_NoTitleBar)){
             for(const auto& item : datafiles){
-                if(ImGui::Button(item["name"].get<std::string>().c_str(), ImVec2(-1, 0))) printf("Placeholder");
+                if(ImGui::Button(item["name"].get<std::string>().c_str(), ImVec2(-1, 0))){
+                    info_window_open = true;
+                    info_window_check = item["name"].get<std::string>();
+                }
+                if(info_window_open && item["name"] == info_window_check){ // preventing window from appearing for each entry
+                    ImGui::PopStyleVar();
+                    ImGui::SetNextWindowPos(ImVec2(480-(480/2), 272-(272/2)));
+                    ImGui::SetNextWindowSize(ImVec2(480, 272));
+                    ImGui::SetNextWindowFocus();
+                    if(ImGui::Begin(item["name"].get<std::string>().c_str(), nullptr, ImGuiWindowFlags_NoCollapse + ImGuiWindowFlags_NoResize + ImGuiWindowFlags_NoMove + ImGuiWindowFlags_Modal)){
+                        ImGui::TextWrapped(item["description"].get<std::string>().c_str());
+                        ImGui::Text(item["date"].get<std::string>().c_str());
+                        ImGui::Text(item["titleid"].get<std::string>().c_str());
+                        ImGui::Button("Download .VPK", ImVec2(-1, 0));
+                        ImGui::Button("Download Data Files", ImVec2(-1, 0));
+                        if((pad.buttons & SCE_CTRL_CIRCLE) && !(oldpad.buttons & SCE_CTRL_CIRCLE)) info_window_open = false;
+                    }
+                    ImGui::End();
+                    ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0, 0));
+                }
             }
         }
         ImGui::End();
@@ -170,6 +195,8 @@ int main(){
 
         vita2d_end_drawing();
         vita2d_swap_buffers();
+        if((pad.buttons & SCE_CTRL_START) && !(oldpad.buttons & SCE_CTRL_START)) break;
+        oldpad = pad;
     }
 
     ImGui_ImplVita2D_Shutdown();
