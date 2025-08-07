@@ -25,7 +25,7 @@ int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow, curl_
         dl_progress = (double)dlnow / (double)dltotal * 100.0;
         sceClibPrintf("Download progress: %.2f%%\n", dl_progress);
     }
-    return 0; // Return non-zero to abort the transfer
+    return 0;
 }
 
 static size_t dl_write(void *ptr, size_t size, size_t nmemb, void *stream){
