@@ -67,6 +67,7 @@ int main(){
     vita2d_set_clear_color(RGBA8(0, 0, 0, 255));
 
     if(!Utils::FileOrPathExists("ux0:data/DataFiles")) sceIoMkdir("ux0:data/DataFiles", 0777);
+    if(!Utils::FileOrPathExists("ux0:data/DataFiles/screenshots")) sceIoMkdir("ux0:data/DataFiles/screenshots", 0777);
 
     sceSysmoduleLoadModule(SCE_SYSMODULE_NET);
 	sceSysmoduleLoadModule(SCE_SYSMODULE_SSL);
@@ -79,6 +80,7 @@ int main(){
 	sceNetCtlInit();
 	sceHttpInit(1*1024*1024);
 	sceSslInit(1*1024*1024);
+    curl_global_init(CURL_GLOBAL_ALL);
 
     json config = LoadOrCreateConfig();
 
@@ -96,7 +98,7 @@ int main(){
     ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
 	ImGui_ImplVita2D_Init();
-    ImGui_ImplVita2D_TouchUsage(true);
+    ImGui_ImplVita2D_TouchUsage(false);
     ImGui_ImplVita2D_UseRearTouch(false);
     ImGui_ImplVita2D_UseIndirectFrontTouch(false);
     ImGui_ImplVita2D_GamepadUsage(true);
@@ -118,6 +120,7 @@ int main(){
 
     while(true){
         sceCtrlPeekBufferPositive(0, &pad, 1);
+        check_dl_thd_for_free();
         vita2d_start_drawing();
         vita2d_clear_screen();
 
@@ -179,9 +182,49 @@ int main(){
                         ImGui::TextWrapped(item["description"].get<std::string>().c_str());
                         ImGui::Text(item["date"].get<std::string>().c_str());
                         ImGui::Text(item["titleid"].get<std::string>().c_str());
-                        ImGui::Button("Download .VPK", ImVec2(-1, 0));
-                        ImGui::Button("Download Data Files", ImVec2(-1, 0));
-                        if((pad.buttons & SCE_CTRL_CIRCLE) && !(oldpad.buttons & SCE_CTRL_CIRCLE)) info_window_open = false;
+                        ImGui::Text(item["size"].get<std::string>().c_str());
+                        if(item.contains("data_size")) ImGui::Text(item["data_size"].get<std::string>().c_str());
+                        ImGui::Separator();
+                        if(ImGui::Button("Download .VPK", ImVec2(-1, 0))) {
+                            std::string path = "ux0:data/DataFiles/" + item["name"].get<std::string>() + ".vpk";
+                            dl_topath(item["url"].get<std::string>().c_str(), path.c_str());
+                        }
+                        if(is_dl){
+                            sceKernelPowerTick(SCE_KERNEL_POWER_TICK_DEFAULT);
+                            ImGui::SetNextWindowPos(ImVec2((960/2)-200, (544/2)-50));
+                            ImGui::SetNextWindowSize(ImVec2(400, 100));
+                            ImGui::SetNextWindowFocus();
+                            if(ImGui::Begin("Progress", nullptr, ImGuiWindowFlags_NoCollapse + ImGuiWindowFlags_NoResize + ImGuiWindowFlags_NoMove + ImGuiWindowFlags_NoTitleBar + ImGuiWindowFlags_NoNav + ImGuiWindowFlags_NoNavFocus + ImGuiWindowFlags_NoNavInputs)){
+                                ImVec2 textsize = ImGui::CalcTextSize("Downloading .VPK...");
+                                ImGui::SetCursorPos(ImVec2((400 - textsize.x)/2, 20));
+                                ImGui::Text("Downloading .VPK...");
+                                ImGui::SetCursorPos(ImVec2(100, 60));
+                                ImGui::ProgressBar(dl_progress / 100, ImVec2(200, 0));
+                            }
+                            ImGui::End();
+                        }
+                        if(item.contains("data")){
+                            if(ImGui::Button("Download Data Files", ImVec2(-1, 0))){
+                                std::string path = "ux0:data/DataFiles/" + item["name"].get<std::string>() + ".zip";
+                                dl_topath(item["data"].get<std::string>().c_str(), path.c_str());
+                            }
+                            if(is_dl){
+                                sceKernelPowerTick(SCE_KERNEL_POWER_TICK_DEFAULT);
+                                ImGui::SetNextWindowPos(ImVec2((960/2)-200, (544/2)-50));
+                                ImGui::SetNextWindowSize(ImVec2(400, 100));
+                                ImGui::SetNextWindowFocus();
+                                if(ImGui::Begin("Progress", nullptr, ImGuiWindowFlags_NoCollapse + ImGuiWindowFlags_NoResize + ImGuiWindowFlags_NoMove + ImGuiWindowFlags_NoTitleBar + ImGuiWindowFlags_NoNav + ImGuiWindowFlags_NoNavFocus + ImGuiWindowFlags_NoNavInputs)){
+                                    ImVec2 textsize = ImGui::CalcTextSize("Downloading data files...");
+                                    ImGui::SetCursorPos(ImVec2((400 - textsize.x)/2, 20));
+                                    ImGui::Text("Downloading data files...");
+                                    ImGui::SetCursorPos(ImVec2(100, 60));
+                                    ImGui::ProgressBar(dl_progress / 100, ImVec2(200, 0));
+                                }
+                                ImGui::End();
+                            }
+                        }
+                        ImGui::Button("View Screenshots", ImVec2(-1, 0));
+                        if((pad.buttons & SCE_CTRL_CIRCLE) && !(oldpad.buttons & SCE_CTRL_CIRCLE) && !is_dl) info_window_open = false;
                     }
                     ImGui::End();
                     ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0, 0));
@@ -190,18 +233,20 @@ int main(){
         }
         ImGui::End();
 
+        if((pad.buttons & SCE_CTRL_START) && !(oldpad.buttons & SCE_CTRL_START) && !is_dl) break;
+
         ImGui::Render();
 	    ImGui_ImplVita2D_RenderDrawData(ImGui::GetDrawData());
 
         vita2d_end_drawing();
         vita2d_swap_buffers();
-        if((pad.buttons & SCE_CTRL_START) && !(oldpad.buttons & SCE_CTRL_START)) break;
         oldpad = pad;
     }
 
     ImGui_ImplVita2D_Shutdown();
 	ImGui::DestroyContext();
 
+	curl_global_cleanup();
     sceSslTerm();
 	sceHttpTerm();
 	sceNetCtlTerm();
