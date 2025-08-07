@@ -1,6 +1,8 @@
 // PS Vita Data Files Downloader by Harommel OddSock
 // Licensed under GPLv3
 
+#pragma once
+
 #include <vitasdk.h>
 #include <stdbool.h>
 #include <stdio.h>

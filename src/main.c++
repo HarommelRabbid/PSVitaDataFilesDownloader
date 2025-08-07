@@ -11,6 +11,7 @@
 #include <imgui_vita2d/imgui_vita.h>
 
 #include "utils.h++"
+#include "config.h++"
 #include "dl.h"
 #include "include/json.hpp"
 using json = nlohmann::json;
@@ -27,39 +28,6 @@ typedef enum {
 } Themes;
 
 Themes theme = dark_theme;
-
-json defaultConfig = {
-    {"theme", "dark"},
-    {"update_list_on_start", true}
-};
-
-void SaveConfig(const json& config) {
-    std::ofstream outFile("ux0:data/DataFiles/config.json");
-    if (outFile.is_open()) {
-        outFile << config.dump(4); // pretty-print with 4-space indent
-        outFile.close();
-    }else sceClibPrintf("Failed to create config file.\n");
-}
-
-json LoadOrCreateConfig() {
-    json config;
-
-    if (std::filesystem::exists("ux0:data/DataFiles/config.json")) {
-        std::ifstream inFile("ux0:data/DataFiles/config.json");
-        try {
-            inFile >> config;
-        } catch (const std::exception& e) {
-            sceClibPrintf("Config load error: %s\n", e.what());
-            config = defaultConfig;
-            SaveConfig(config);
-        }
-    } else {
-        config = defaultConfig;
-        SaveConfig(config);
-    }
-
-    return config;
-}
 
 int main(){
     sceCtrlSetSamplingMode(SCE_CTRL_MODE_ANALOG_WIDE);
@@ -82,7 +50,7 @@ int main(){
 	sceSslInit(1*1024*1024);
     curl_global_init(CURL_GLOBAL_ALL);
 
-    json config = LoadOrCreateConfig();
+    json config = Config::LoadOrCreate();
 
     if(config["update_list_on_start"]){
         dl_topath_nothread("https://raw.githubusercontent.com/NFSHubster/PS-Vita-Data-Files/refs/heads/main/list_hbs_json.php", "ux0:data/DataFiles/datafiles.json");
@@ -131,26 +99,26 @@ int main(){
             if(ImGui::BeginMenu("Settings")){
                 if(ImGui::MenuItem("Update list every time the app starts", nullptr, config["update_list_on_start"])){
                     config["update_list_on_start"] = !config["update_list_on_start"];
-                    SaveConfig(config);
+                    Config::Save(config);
                 }
                 if(ImGui::BeginMenu("Theme")){
                     if(ImGui::MenuItem("Dark", nullptr, theme == dark_theme) && theme != dark_theme){
                         theme = dark_theme;
                         config["theme"] = "dark";
                         ImGui::StyleColorsDark();
-                        SaveConfig(config);
+                        Config::Save(config);
                     }
                     if(ImGui::MenuItem("Light", nullptr, theme == light_theme) && theme != light_theme){
                         theme = light_theme;
                         config["theme"] = "light";
                         ImGui::StyleColorsLight();
-                        SaveConfig(config);
+                        Config::Save(config);
                     }
                     if(ImGui::MenuItem("Classic", nullptr, theme == classic_theme) && theme != classic_theme){
                         theme = classic_theme;
                         config["theme"] = "classic";
                         ImGui::StyleColorsClassic();
-                        SaveConfig(config);
+                        Config::Save(config);
                     }
                     ImGui::EndMenu();
                 }
