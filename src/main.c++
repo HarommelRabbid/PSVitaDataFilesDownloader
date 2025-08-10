@@ -151,8 +151,8 @@ int main(){
                         ImGui::TextWrapped(item["description"].get<std::string>().c_str());
                         ImGui::Text(item["date"].get<std::string>().c_str());
                         ImGui::Text(item["titleid"].get<std::string>().c_str());
-                        ImGui::Text(item["size"].get<std::string>().c_str());
-                        if(item.contains("data_size")) ImGui::Text(item["data_size"].get<std::string>().c_str());
+                        ImGui::Text(std::string(std::string(("Size: ")) + item["size"].get<std::string>()).c_str());
+                        if(item.contains("data_size") || (item.contains("data") && item["data"].get<std::string>() != "")) ImGui::Text(std::string(std::string(("Data files size: ")) + item["data_size"].get<std::string>()).c_str());
                         ImGui::Separator();
                         if(ImGui::Button("Download .VPK", ImVec2(-1, 0))) {
                             std::string path = "ux0:data/DataFiles/" + item["name"].get<std::string>() + ".vpk";
@@ -173,12 +173,7 @@ int main(){
                             }
                             ImGui::End();
                         }
-                        if(trigger_vpk && dl_no_data){
-                            std::string path = "ux0:data/DataFiles/" + item["name"].get<std::string>() + ".zip";
-                            Utils::ArchiveExtract(path, "ux0:data/datafiles_temp");
-                            Utils::AppInstall("ux0:data/datafiles_temp")
-                        }
-                        if(item.contains("data")){
+                        if(item.contains("data") || (item.contains("data") && item["data"].get<std::string>() != "")){
                             if(ImGui::Button("Download Data Files", ImVec2(-1, 0))){
                                 std::string path = "ux0:data/DataFiles/" + item["name"].get<std::string>() + ".zip";
                                 dl_topath(item["data"].get<std::string>().c_str(), path.c_str());
@@ -197,10 +192,6 @@ int main(){
                                     ImGui::ProgressBar(dl_progress / 100, ImVec2(200, 0));
                                 }
                                 ImGui::End();
-                            }
-                            if(trigger_data && dl_no_vpk){
-                                std::string path = "ux0:data/DataFiles/" + item["name"].get<std::string>() + ".zip";
-                                Utils::ArchiveExtract(path.c_str(), "ux0:data/");
                             }
                         }
                         ImGui::Button("View Screenshots", ImVec2(-1, 0));

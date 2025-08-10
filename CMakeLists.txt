@@ -56,8 +56,6 @@ link_directories(
 add_executable(${PROJECT_NAME}
   src/main.c++
   src/dl.c
-  src/include/makeheadbin.c
-  src/include/sha1.c
 )
 
 # Library to link to (drop the -l prefix). This will mostly be stubs.
