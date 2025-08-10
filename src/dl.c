@@ -19,6 +19,7 @@ double dl_progress = 0;
 bool is_dl = false;
 static DLInfo *dl_info = NULL;
 bool is_dl_thd = false;
+bool trigger_vpk = false, trigger_data = false;
 
 int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow){
     if (dltotal > 0) {
@@ -62,6 +63,7 @@ static int download_thread(SceSize args, void *argp){
 	dl_progress = 0;
 	is_dl = false;
 	is_dl_thd = false;
+	trigger_vpk = true;
     return sceKernelExitDeleteThread(0);
 }
 

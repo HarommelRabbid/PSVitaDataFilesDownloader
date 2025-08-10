@@ -15,6 +15,7 @@ extern "C" {
 
 extern double dl_progress;
 extern bool is_dl;
+extern bool trigger_vpk, trigger_data;
 
 void dl_topath(const char *url, const char *path);
 void dl_topath_nothread(const char *url, const char *path);

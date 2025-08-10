@@ -17,6 +17,7 @@
 using json = nlohmann::json;
 
 bool info_window_open = false;
+bool dl_no_data = false, dl_no_vpk = false;
 std::string info_window_check;
 
 SceCtrlData pad, oldpad;
@@ -156,8 +157,9 @@ int main(){
                         if(ImGui::Button("Download .VPK", ImVec2(-1, 0))) {
                             std::string path = "ux0:data/DataFiles/" + item["name"].get<std::string>() + ".vpk";
                             dl_topath(item["url"].get<std::string>().c_str(), path.c_str());
+                            dl_no_vpk = false, dl_no_data = true;
                         }
-                        if(is_dl){
+                        if(is_dl && dl_no_data){
                             sceKernelPowerTick(SCE_KERNEL_POWER_TICK_DEFAULT);
                             ImGui::SetNextWindowPos(ImVec2((960/2)-200, (544/2)-50));
                             ImGui::SetNextWindowSize(ImVec2(400, 100));
@@ -171,12 +173,18 @@ int main(){
                             }
                             ImGui::End();
                         }
+                        if(trigger_vpk && dl_no_data){
+                            std::string path = "ux0:data/DataFiles/" + item["name"].get<std::string>() + ".zip";
+                            Utils::ArchiveExtract(path, "ux0:data/datafiles_temp");
+                            Utils::AppInstall("ux0:data/datafiles_temp")
+                        }
                         if(item.contains("data")){
                             if(ImGui::Button("Download Data Files", ImVec2(-1, 0))){
                                 std::string path = "ux0:data/DataFiles/" + item["name"].get<std::string>() + ".zip";
                                 dl_topath(item["data"].get<std::string>().c_str(), path.c_str());
+                                dl_no_vpk = true, dl_no_data = false;
                             }
-                            if(is_dl){
+                            if(is_dl && dl_no_vpk){
                                 sceKernelPowerTick(SCE_KERNEL_POWER_TICK_DEFAULT);
                                 ImGui::SetNextWindowPos(ImVec2((960/2)-200, (544/2)-50));
                                 ImGui::SetNextWindowSize(ImVec2(400, 100));
@@ -190,6 +198,10 @@ int main(){
                                 }
                                 ImGui::End();
                             }
+                            if(trigger_data && dl_no_vpk){
+                                std::string path = "ux0:data/DataFiles/" + item["name"].get<std::string>() + ".zip";
+                                Utils::ArchiveExtract(path.c_str(), "ux0:data/");
+                            }
                         }
                         ImGui::Button("View Screenshots", ImVec2(-1, 0));
                         if((pad.buttons & SCE_CTRL_CIRCLE) && !(oldpad.buttons & SCE_CTRL_CIRCLE) && !is_dl) info_window_open = false;
@@ -201,7 +213,7 @@ int main(){
         }
         ImGui::End();
 
-        if((pad.buttons & SCE_CTRL_START) && !(oldpad.buttons & SCE_CTRL_START) && !is_dl) break;
+        if((pad.buttons & SCE_CTRL_START) && !(oldpad.buttons & SCE_CTRL_START) && (!is_dl || dl_no_data || dl_no_vpk)) break;
 
         ImGui::Render();
 	    ImGui_ImplVita2D_RenderDrawData(ImGui::GetDrawData());
